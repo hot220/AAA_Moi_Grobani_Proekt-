@@ -18,6 +18,8 @@ m_hp = []
 iksiki = []
 seki = []
 ataki = []
+bilo = []
+mob1 = pygame.sprite.Group()
 seki_neo = 0
 
 hp_ = pygame.image.load("data/hp.png")
@@ -99,8 +101,9 @@ class Person(pygame.sprite.Sprite):
 class Mob(pygame.sprite.Sprite):
     image = mob_
 
-    def __init__(self, nom):
-        global mobes, zzz, fps, dmg, zuk, m_hp, iksiki, ataki, seki
+    def __init__(self, nom, *group):
+        global mobes, zzz, fps, dmg, zuk, m_hp, iksiki, ataki, seki, bilo
+        super().__init__(*group)
         if zuk > 0:
             m_hp.append(fps * 3)
             zuk -= 1
@@ -108,20 +111,36 @@ class Mob(pygame.sprite.Sprite):
         self.ataki = ataki[nom]
         self.seki = seki[nom]
         self.dmg = dmg
-        self.image = Mob.image
+        self.image = Mob.image[self.ataki]
+        self.rect = self.image.get_rect()
+        self.rect.x = iksiki[self.nom][0]
+        self.rect.y = iksiki[self.nom][1]
+        #naris(self.image[self.ataki], )
 
-        naris(self.image[self.ataki], iksiki[self.nom])
-        colision = zzz  # Когда моб сопрекасаеться с Person    if pygame.sprite.collide_mask(self, self.person):
+        colision = zzz  # Когда моб сопрекасаеться с Person
+        # if pygame.sprite.collide_mask(self, person):
+        #     print('xa')
+    def update(self):
+        self.ataki = ataki[self.nom]
+        self.seki = seki[self.nom]
+        if bilo[self.nom] == 1:
+            self.image = Mob.image[self.ataki]
+            self.rect = self.image.get_rect()
+            self.rect.x = iksiki[self.nom][0]
+            self.rect.y = iksiki[self.nom][1]
+            bilo[self.nom] -= 1
         if self.seki < 1:
-            seki[nom] = 0
-            ataki[nom] = random.randint(0, 4)
-            if ataki[nom] != 3:
-                seki[nom] = fps
-            seki[nom] += fps
-        seki[nom] -= 1
+            seki[self.nom] = 0
+            ataki[self.nom] = random.randint(0, 4)
+            if ataki[self.nom] != 3:
+                seki[self.nom] = fps
+            seki[self.nom] += fps
+        seki[self.nom] -= 1
+        print(self.ataki, self.seki)
+        self.image = Mob.image[self.ataki]
 
-        if colision:
-            self.auh()
+        # if colision:
+        #     self.auh()
 
     def auh(self):
         global m_hp, mobes
@@ -220,22 +239,26 @@ def persik():
 
 
 def wolna():
-    global iksiki, w_lvl, mobes, person, zuk, m_hp, seki, ataki, seki_neo, fps
+    global iksiki, w_lvl, mobes, person, zuk, m_hp, seki, ataki, seki_neo, fps, bilo, mob1
     m_hp = []
     iksiki = []
     seki = []
     ataki = []
+    bilo = []
     seki_neo = round(fps * 2.5)
     for i in range(w_lvl + math.ceil(w_lvl / 2) + random.randint(0, math.ceil(w_lvl / 2))):
-        iksiki.append((random.randint(250, 850), random.randint(250, 550)))
+        iksiki.append((random.randint(250, 850), random.randint(150, 450)))
         mobes += 1
         zuk += 1
         seki.append(round(fps))
         ataki.append(1)
+        bilo.append(1)
+    for i in range(len(iksiki)):
+        Mob(i).add(mob1)
 
 
 def ekran(nomer_ekrana):
-    global iksiki, mobes, w_lvl
+    global iksiki, mobes, w_lvl, mob1
     if nomer_ekrana == 1:
         screen.fill((88, 255, 228))
         pygame.draw.rect(screen, (232, 140, 49), (300, 400, 400, 170), 0)
@@ -246,15 +269,14 @@ def ekran(nomer_ekrana):
 
         naris(dmj_, (150, 120))
 
-        persik()
+        persik();
 
     if nomer_ekrana == 2:
         screen.fill((88, 255, 228))
         if mobes == 0:
             w_lvl += 1
             wolna()
-        for i in range(len(iksiki)):
-            mob1 = Mob(i)
+
         c_col = (235, 90, 255)
         pygame.draw.circle(screen, (170, 0, 200), (50, 50), 150)
         pygame.draw.circle(screen, (235, 90, 255), (50, 50), 135)
@@ -267,7 +289,7 @@ def ekran(nomer_ekrana):
             uu = (15, 10)
         screen.blit(text, uu)
 
-    person = Person(pers)
+
 
 
 clock = pygame.time.Clock()
@@ -275,12 +297,14 @@ fps = 70
 zzz = False
 while True:
     ekran(nomer_ekrana)
+    person = Person(pers)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             stop()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 nomer_ekrana = 1
+                print(11113)
             if event.key == pygame.K_F5:
                 w_lvl += 1
                 mobes = 0
@@ -288,9 +312,11 @@ while True:
                 zzz = True
             if event.key == pygame.K_x:
                 zzz = False
-
+    #screen.fill('#435477')
+    mob1.draw(screen)
     screen.blit(font(30).render(f"fps: {str(int(clock.get_fps()))}", True, [255, 255, 255]), (10, 555))
+    mob1.update()
+    pygame.display.flip()
     clock.tick(fps)
-    pygame.display.update()
 
 stop()
